@@ -1,0 +1,212 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum CallType {
+  INCOMING
+  OUTGOING
+  MISSED
+}
+
+enum SmsType {
+  INCOMING
+  OUTGOING
+}
+
+enum NotificationType {
+  LOW_BATTERY
+  DEVICE_OFFLINE
+  PERMISSION_REVOKED
+  SYNC_ERROR
+  NEW_DEVICE
+  PAIRING_SUCCESS
+}
+
+model Parent {
+  id                String          @id @default(uuid())
+  email             String          @unique
+  passwordHash      String
+  name              String
+  phone             String?
+  avatar            String?
+  twoFactorEnabled  Boolean         @default(false)
+  twoFactorSecret   String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  refreshTokens     RefreshToken[]
+  devices           ChildDevice[]
+  notifications     Notification[]
+  sessions          Session[]
+  auditLogs         AuditLog[]
+
+  @@index([email])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  parentId  String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  parent Parent @relation(fields: [parentId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([parentId])
+  @@index([expiresAt])
+}
+
+model ChildDevice {
+  id                  String       @id @default(uuid())
+  name                String
+  model               String
+  manufacturer        String
+  androidVersion      String
+  pairingCode         String       @unique
+  parentId            String
+  isOnline            Boolean      @default(false)
+  lastSyncAt          DateTime?
+  batteryLevel        Int          @default(100)
+  storageTotal        BigInt       @default(0)
+  storageUsed         BigInt       @default(0)
+  isMonitoringActive  Boolean      @default(true)
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  parent        Parent        @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  contacts      Contact[]
+  callLogs      CallLog[]
+  smsMessages   SmsMessage[]
+  notifications Notification[]
+  syncStates    SyncState[]
+
+  @@index([pairingCode])
+  @@index([parentId])
+  @@index([isOnline])
+}
+
+model Contact {
+  id           String   @id @default(uuid())
+  deviceId     String
+  name         String
+  phoneNumber  String?
+  email        String?
+  isFavorite   Boolean  @default(false)
+  syncHash     String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  device ChildDevice @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([deviceId])
+  @@index([syncHash])
+  @@index([phoneNumber])
+}
+
+model CallLog {
+  id           String   @id @default(uuid())
+  deviceId     String
+  contactName  String?
+  phoneNumber  String
+  type         CallType
+  duration     Int      @default(0)
+  timestamp    DateTime
+  syncHash     String
+  createdAt    DateTime @default(now())
+
+  device ChildDevice @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([deviceId])
+  @@index([timestamp])
+  @@index([syncHash])
+  @@index([phoneNumber])
+}
+
+model SmsMessage {
+  id              String   @id @default(uuid())
+  deviceId        String
+  senderNumber    String
+  recipientNumber String
+  body            String
+  type            SmsType
+  timestamp       DateTime
+  syncHash        String
+  createdAt       DateTime @default(now())
+
+  device ChildDevice @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([deviceId])
+  @@index([timestamp])
+  @@index([syncHash])
+  @@index([senderNumber])
+  @@index([recipientNumber])
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  parentId  String
+  deviceId  String?
+  type      NotificationType
+  title     String
+  message   String
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  parent Parent       @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  device ChildDevice? @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+
+  @@index([parentId])
+  @@index([isRead])
+  @@index([createdAt])
+}
+
+model Session {
+  id          String   @id @default(uuid())
+  parentId    String
+  deviceToken String
+  ipAddress   String?
+  userAgent   String?
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+
+  parent Parent @relation(fields: [parentId], references: [id], onDelete: Cascade)
+
+  @@index([parentId])
+  @@index([deviceToken])
+  @@index([expiresAt])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  parentId  String?
+  action    String
+  targetId  String?
+  details   Json
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  parent Parent? @relation(fields: [parentId], references: [id], onDelete: SetNull)
+
+  @@index([parentId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+model SyncState {
+  id                String   @id @default(uuid())
+  deviceId          String
+  entityType        String
+  lastSyncTimestamp DateTime
+  lastSyncHash      String?
+
+  device ChildDevice @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@unique([deviceId, entityType])
+  @@index([deviceId])
+}

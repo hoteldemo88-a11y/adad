@@ -1,0 +1,72 @@
+version: "3.9"
+
+services:
+  postgres:
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-parental_control_dev}
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: development
+    container_name: parental_control_backend_dev
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-parental_control_dev}
+      JWT_SECRET: dev-super-secret-jwt-key-do-not-use-in-production
+      JWT_REFRESH_SECRET: dev-super-secret-refresh-key-do-not-use-in-production
+      JWT_EXPIRATION: 1h
+      JWT_REFRESH_EXPIRATION: 30d
+      CORS_ORIGIN: http://localhost:5173,http://localhost:5174
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/prisma:/app/prisma
+      - /app/node_modules
+      - /app/dist
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app_network
+    command: >
+      sh -c "npx prisma migrate deploy && npx prisma generate && npm run dev"
+
+  dashboard:
+    build:
+      context: ./dashboard
+      dockerfile: Dockerfile
+      target: development
+    container_name: parental_control_dashboard_dev
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_URL: http://localhost:3000/api
+    volumes:
+      - ./dashboard/src:/app/src
+      - /app/node_modules
+      - /app/dist
+    networks:
+      - app_network
+    command: npm run dev -- --host 0.0.0.0
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: parental_control_mailhog
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    driver: bridge
+    name: parental_control_network_dev

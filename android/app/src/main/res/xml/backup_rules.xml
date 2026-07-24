@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <include domain="database" path="." />
+    <include domain="sharedpref" path="." />
+    <exclude domain="database" path="child_monitor.db-wal" />
+    <exclude domain="database" path="child_monitor.db-shm" />
+    <exclude domain="no_backup" path="." />
+</full-backup-content>
