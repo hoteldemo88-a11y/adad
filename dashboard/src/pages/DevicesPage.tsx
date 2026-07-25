@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   DevicePhoneMobileIcon,
@@ -19,6 +20,7 @@ import { formatDistanceToNow } from 'date-fns';
 import clsx from 'clsx';
 
 export default function DevicesPage() {
+  const navigate = useNavigate();
   const { data: devices, isLoading } = useDevices();
   const { data: pendingDevices } = usePendingDevices();
   const approveDevice = useApproveDevice();
@@ -124,7 +126,8 @@ export default function DevicesPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.05 }}
               whileHover={{ y: -2 }}
-              className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm"
+              onClick={() => navigate(`/devices/${device.id}`)}
+              className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 shadow-sm cursor-pointer hover:shadow-md hover:border-primary-300 dark:hover:border-primary-700 transition-all"
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">

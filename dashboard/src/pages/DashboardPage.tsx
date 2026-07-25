@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import {
   DevicePhoneMobileIcon,
   UserGroupIcon,
@@ -19,6 +20,7 @@ import clsx from 'clsx';
 
 export default function DashboardPage() {
   const { data, isLoading, error } = useDashboard();
+  const navigate = useNavigate();
 
   if (isLoading) {
     return (
@@ -132,7 +134,8 @@ export default function DashboardPage() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.05 }}
-              className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 shadow-sm"
+              onClick={() => navigate(`/devices/${device.id}`)}
+              className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 shadow-sm cursor-pointer hover:shadow-md hover:border-primary-300 dark:hover:border-primary-700 transition-all"
             >
               <div className="flex items-start justify-between mb-3">
                 <div>
