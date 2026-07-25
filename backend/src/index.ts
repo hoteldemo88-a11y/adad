@@ -5,7 +5,9 @@ import rateLimit from '@fastify/rate-limit';
 import jwt from '@fastify/jwt';
 import formbody from '@fastify/formbody';
 import { config } from './config';
-import { connectDatabase, disconnectDatabase } from './config/database';
+import { connectDatabase, disconnectDatabase, prisma } from './config/database';
+import bcrypt from 'bcryptjs';
+import * as crypto from 'crypto';
 import { errorHandler } from './middleware/error-handler';
 import { requestLogger } from './middleware/request-logger';
 import authRoutes from './routes/auth';
@@ -82,9 +84,87 @@ async function buildServer() {
   return fastify;
 }
 
+async function autoSeed(): Promise<void> {
+  try {
+    const parentCount = await prisma.parent.count();
+    if (parentCount > 0) {
+      console.log('Database already seeded, skipping.');
+      return;
+    }
+
+    console.log('Database is empty, seeding...');
+
+    const passwordHash = await bcrypt.hash('Test1234!', 12);
+    const genHash = (data: string) => crypto.createHash('md5').update(data).digest('hex');
+
+    const parent = await prisma.parent.create({
+      data: { email: 'parent@example.com', passwordHash, name: 'John Doe', phone: '+1-555-0000' },
+    });
+
+    const device = await prisma.childDevice.create({
+      data: {
+        name: 'Samsung Galaxy S24', model: 'Galaxy S24', manufacturer: 'Samsung',
+        androidVersion: 'Android 14', pairingCode: '123456', parentId: parent.id,
+        isOnline: true, lastSyncAt: new Date(), batteryLevel: 85,
+        storageTotal: BigInt(128 * 1024 * 1024 * 1024), storageUsed: BigInt(64 * 1024 * 1024 * 1024),
+      },
+    });
+
+    const contacts = [
+      { name: 'Mom', phoneNumber: '+1-555-0101', email: 'mom@example.com', isFavorite: true },
+      { name: 'Dad', phoneNumber: '+1-555-0102', email: 'dad@example.com', isFavorite: true },
+      { name: 'Unknown Caller', phoneNumber: '+1-555-0200', isFavorite: false },
+      { name: 'Best Friend Alex', phoneNumber: '+1-555-0301', email: 'alex@example.com', isFavorite: false },
+      { name: 'School Office', phoneNumber: '+1-555-0400', isFavorite: false },
+    ];
+
+    await prisma.contact.createMany({
+      data: contacts.map(c => ({
+        deviceId: device.id, ...c, email: c.email || null,
+        syncHash: genHash(`${c.name}${c.phoneNumber}`),
+      })),
+    });
+
+    const now = Date.now();
+    const calls = [
+      { contactName: 'Mom', phoneNumber: '+1-555-0101', type: 'OUTGOING' as const, duration: 342, offset: 1 },
+      { contactName: 'Dad', phoneNumber: '+1-555-0102', type: 'INCOMING' as const, duration: 125, offset: 3 },
+      { contactName: 'Unknown Caller', phoneNumber: '+1-555-0200', type: 'MISSED' as const, duration: 0, offset: 5 },
+      { contactName: 'Best Friend Alex', phoneNumber: '+1-555-0301', type: 'OUTGOING' as const, duration: 890, offset: 8 },
+    ];
+
+    await prisma.callLog.createMany({
+      data: calls.map(c => ({
+        deviceId: device.id, ...c,
+        timestamp: new Date(now - c.offset * 3600000),
+        syncHash: genHash(`${c.contactName}${c.phoneNumber}${c.type}${c.duration}`),
+      })),
+    });
+
+    const sms = [
+      { senderNumber: '+1-555-0101', recipientNumber: '+1-555-0000', body: "Hi Mom, I'll be home by 5pm today.", type: 'OUTGOING' as const, offset: 2 },
+      { senderNumber: '+1-555-0101', recipientNumber: '+1-555-0000', body: "Ok sweetie, don't forget to pick up milk!", type: 'INCOMING' as const, offset: 2 },
+      { senderNumber: '+1-555-0301', recipientNumber: '+1-555-0000', body: 'Hey! Want to hang out after school tomorrow?', type: 'INCOMING' as const, offset: 4 },
+    ];
+
+    await prisma.smsMessage.createMany({
+      data: sms.map(s => ({
+        deviceId: device.id, ...s,
+        timestamp: new Date(now - s.offset * 3600000),
+        syncHash: genHash(`${s.type}${s.body}`),
+      })),
+    });
+
+    console.log('Seeding complete! Parent: parent@example.com / Test1234! | Pairing code: 123456');
+  } catch (error) {
+    console.error('Auto-seed failed:', error);
+  }
+}
+
 async function start() {
   try {
     await connectDatabase();
+    await autoSeed();
 
     const server = await buildServer();
 

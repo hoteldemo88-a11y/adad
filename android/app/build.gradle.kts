@@ -22,7 +22,7 @@ android {
         vectorDrawables { useSupportLibrary = true }
 
         buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:3000/\"")
-        buildConfigField("String", "BASE_URL_PROD", "\"https://api.childmonitor.app/\"")
+        buildConfigField("String", "BASE_URL_PROD", "\"https://parental-control-backend-fg7t.onrender.com/\"")
 
         ksp {
             arg("room.schemaLocation", "$projectDir/schemas")

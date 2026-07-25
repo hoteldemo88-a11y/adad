@@ -9,9 +9,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
-        fromDatabase:
-          name: parental-control-db
-          property: connectionString
+        value: postgresql://test_w0m5_user:EJN1kLTzqb07L9S2iMkvIMnlT7fZw8mp@dpg-d9hk2ssm0tmc73b1rau0-a.virginia-postgres.render.com/test_w0m5
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_REFRESH_SECRET
@@ -20,9 +18,3 @@ services:
         value: https://parental-control-dashboard.onrender.com
     healthCheckPath: /health
     autoDeploy: true
-
-databases:
-  - name: parental-control-db
-    plan: free
-    databaseName: parental_control
-    postgresMajorVersion: "16"
