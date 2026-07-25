@@ -19,7 +19,8 @@ services:
     healthCheckPath: /health
     autoDeploy: true
 
-  - type: static_site
+  - type: web
+    runtime: static
     name: parental-control-dashboard
     plan: free
     buildCommand: cd dashboard && npm install && npm run build
