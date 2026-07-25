@@ -3,13 +3,13 @@ services:
     name: parental-control-backend
     runtime: node
     plan: free
-    buildCommand: cd backend && npm install --include=dev && npx prisma generate && npx prisma db push --skip-generate --accept-data-loss && npm run build
+    buildCommand: cd backend && npm install --include=dev && npx prisma generate && npm run build
     startCommand: cd backend && node dist/index.js
     envVars:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
-        value: postgresql://test_w0m5_user:EJN1kLTzqb07L9S2iMkvIMnlT7fZw8mp@dpg-d9hk2ssm0tmc73b1rau0-a.virginia-postgres.render.com/test_w0m5?sslmode=require&connection_limit=1
+        value: postgresql://test_w0m5_user:EJN1kLTzqb07L9S2iMkvIMnlT7fZw8mp@dpg-d9hk2ssm0tmc73b1rau0-a.virginia-postgres.render.com/test_w0m5?sslmode=require
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_REFRESH_SECRET
