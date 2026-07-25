@@ -6,6 +6,7 @@ export const queryKeys = {
   devices: {
     all: ['devices'] as const,
     list: () => [...queryKeys.devices.all, 'list'] as const,
+    pending: () => [...queryKeys.devices.all, 'pending'] as const,
     detail: (id: string) => [...queryKeys.devices.all, 'detail', id] as const,
   },
   contacts: {

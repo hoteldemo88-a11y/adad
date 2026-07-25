@@ -76,7 +76,7 @@ class TokenManager @Inject constructor(
 
     suspend fun isDevicePaired(): Boolean {
         return dataStore.data.map { prefs ->
-            prefs[IS_PAIRED] == true && prefs[DEVICE_TOKEN] != null
+            (prefs[IS_PAIRED] == true || prefs[DEVICE_ID] != null) && prefs[DEVICE_TOKEN] != null
         }.first()
     }
 

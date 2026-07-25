@@ -38,11 +38,23 @@ export const DevicePairSchema = z.object({
   pairingCode: z
     .string()
     .length(6, 'Pairing code must be exactly 6 digits')
-    .regex(/^\d{6}$/, 'Pairing code must contain only digits'),
+    .regex(/^\d{6}$/, 'Pairing code must contain only digits')
+    .optional(),
   deviceName: z.string().min(1, 'Device name is required').max(100, 'Device name is too long'),
   deviceModel: z.string().min(1, 'Device model is required').max(100, 'Device model is too long'),
   androidVersion: z.string().min(1, 'Android version is required').max(20, 'Android version is too long'),
   manufacturer: z.string().min(1, 'Manufacturer is required').max(100, 'Manufacturer is too long'),
+});
+
+export const AutoRegisterSchema = z.object({
+  deviceName: z.string().min(1, 'Device name is required').max(100, 'Device name is too long'),
+  deviceModel: z.string().min(1, 'Device model is required').max(100, 'Device model is too long'),
+  manufacturer: z.string().min(1, 'Manufacturer is required').max(100, 'Manufacturer is too long'),
+  androidVersion: z.string().min(1, 'Android version is required').max(20, 'Android version is too long'),
+});
+
+export const ApproveDeviceSchema = z.object({
+  parentId: z.string().uuid('Invalid parent ID').optional(),
 });
 
 export const DeviceRegisterSchema = z.object({

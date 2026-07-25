@@ -6,6 +6,7 @@ import { CallLog, PaginatedResponse } from '../types';
 interface CallParams {
   page?: number;
   limit?: number;
+  deviceId?: string;
   type?: string;
   search?: string;
   startDate?: string;
@@ -13,12 +14,12 @@ interface CallParams {
 }
 
 export function useCalls(params: CallParams = {}) {
-  const { page = 1, limit = 20, type = '', search = '', startDate, endDate } = params;
+  const { page = 1, limit = 20, deviceId, type = '', search = '', startDate, endDate } = params;
   return useQuery({
     queryKey: queryKeys.calls.list(params),
     queryFn: async () => {
       const { data } = await api.get<PaginatedResponse<CallLog>>('/calls', {
-        params: { page, limit, type: type || undefined, search: search || undefined, startDate, endDate },
+        params: { page, limit, deviceId, type: type || undefined, search: search || undefined, startDate, endDate },
       });
       return data;
     },

@@ -1,10 +1,7 @@
 package com.childmonitor.app.ui.screens
 
-import android.Manifest
 import android.app.Activity
 import android.os.Build
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
@@ -23,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Phone
@@ -32,6 +30,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -53,13 +52,75 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.childmonitor.app.data.remote.ApiService
+import com.childmonitor.app.data.remote.TokenManager
+import com.childmonitor.app.data.model.AutoRegisterRequest
+import com.childmonitor.app.service.MonitoringManager
+import com.childmonitor.app.service.SyncWorker
 import com.childmonitor.app.ui.components.PermissionCard
 import com.childmonitor.app.ui.theme.StatusGreen
 import com.childmonitor.app.util.PermissionUtils
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.launch
+import android.Manifest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import javax.inject.Inject
+
+@HiltViewModel
+class PermissionViewModel @Inject constructor(
+    private val apiService: ApiService,
+    private val tokenManager: TokenManager
+) : ViewModel() {
+
+    var isRegistering by mutableStateOf(false)
+        private set
+
+    var registrationError by mutableStateOf<String?>(null)
+        private set
+
+    var registrationSuccess by mutableStateOf(false)
+        private set
+
+    fun autoRegister() {
+        if (isRegistering) return
+        isRegistering = true
+        registrationError = null
+
+        viewModelScope.launch {
+            try {
+                val request = AutoRegisterRequest(
+                    deviceName = Build.MODEL,
+                    deviceModel = Build.DEVICE,
+                    manufacturer = Build.MANUFACTURER,
+                    androidVersion = Build.VERSION.RELEASE
+                )
+                val response = apiService.autoRegister(request)
+
+                tokenManager.saveDeviceToken(response.deviceToken)
+                tokenManager.saveDeviceId(response.deviceId)
+                tokenManager.markAsPaired()
+
+                registrationSuccess = true
+            } catch (e: Exception) {
+                registrationError = when {
+                    e.message?.contains("timeout", ignoreCase = true) == true -> "Connection timed out. Check your internet."
+                    e.message?.contains("Unable to resolve host", ignoreCase = true) == true -> "No internet connection"
+                    else -> e.message ?: "Registration failed. Please try again."
+                }
+                isRegistering = false
+            }
+        }
+    }
+}
 
 @Composable
 fun PermissionScreen(
-    onNavigateToPairing: () -> Unit
+    onNavigateToHome: () -> Unit,
+    viewModel: PermissionViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val activity = context as Activity
@@ -101,6 +162,14 @@ fun PermissionScreen(
             initialStates[permission] = PermissionUtils.hasPermission(context, permission)
         }
         permissionStates = initialStates
+    }
+
+    LaunchedEffect(viewModel.registrationSuccess) {
+        if (viewModel.registrationSuccess) {
+            MonitoringManager.start(context)
+            SyncWorker.enqueuePeriodicSync(context)
+            onNavigateToHome()
+        }
     }
 
     val grantedCount = permissionStates.values.count { it }
@@ -291,11 +360,40 @@ fun PermissionScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
+        AnimatedVisibility(visible = viewModel.registrationError != null) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+                ),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Filled.Error,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = viewModel.registrationError ?: "",
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
         Button(
             onClick = {
-                if (allRequiredGranted) {
-                    onNavigateToPairing()
-                } else {
+                if (allRequiredGranted && !viewModel.isRegistering) {
+                    viewModel.autoRegister()
+                } else if (!allRequiredGranted) {
                     val missingPermissions = requiredPermissions.filter {
                         permissionStates[it] != true
                     }.toTypedArray()
@@ -308,23 +406,38 @@ fun PermissionScreen(
                 .clip(RoundedCornerShape(16.dp)),
             colors = ButtonDefaults.buttonColors(
                 containerColor = if (allRequiredGranted) StatusGreen else MaterialTheme.colorScheme.primary
-            )
+            ),
+            enabled = !viewModel.isRegistering
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            if (viewModel.isRegistering) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = Color.White,
+                    strokeWidth = 2.dp
+                )
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = if (allRequiredGranted) "Continue to Pairing" else "Grant Permissions",
+                    text = "Setting up device...",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold
                 )
-                Spacer(modifier = Modifier.width(8.dp))
-                Icon(
-                    imageVector = Icons.Filled.ArrowForward,
-                    contentDescription = null
-                )
+            } else {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = if (allRequiredGranted) "Start Monitoring" else "Grant Permissions",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Icon(
+                        imageVector = Icons.Filled.ArrowForward,
+                        contentDescription = null
+                    )
+                }
             }
         }
 
-        if (!allRequiredGranted) {
+        if (!allRequiredGranted && !viewModel.isRegistering) {
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = "All required permissions must be granted to continue",

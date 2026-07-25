@@ -28,7 +28,7 @@ export default function ContactsPage() {
 
   const exportCSV = () => {
     const headers = ['Name', 'Phone', 'Email', 'Favorite'];
-    const rows = contacts.map((c) => [c.name, c.phone, c.email || '', c.isFavorite ? 'Yes' : 'No']);
+    const rows = contacts.map((c) => [c.name, c.phoneNumber || '', c.email || '', c.isFavorite ? 'Yes' : 'No']);
     const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
@@ -98,7 +98,7 @@ export default function ContactsPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{contact.name}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{contact.phone}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{contact.phoneNumber}</p>
                     </div>
                     {contact.isFavorite && <StarSolid className="w-4 h-4 text-yellow-400 flex-shrink-0" />}
                   </motion.div>

@@ -17,14 +17,18 @@ export default async function callsRoutes(fastify: FastifyInstance): Promise<voi
     }
 
     const device = await prisma.childDevice.findFirst({
-      where: { id: deviceId, parentId },
+      where: { id: deviceId },
     });
 
     if (!device) {
       throw new NotFoundError('Device not found');
     }
 
-    if (!device.isMonitoringActive) {
+    if (device.parentId && device.parentId !== parentId) {
+      throw new ForbiddenError('Device does not belong to this parent');
+    }
+
+    if (device.status === 'APPROVED' && !device.isMonitoringActive) {
       return success(reply, { created: 0, updated: 0, deleted: 0 }, 'Monitoring is paused for this device');
     }
 

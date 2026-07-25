@@ -1,6 +1,8 @@
 package com.childmonitor.app.data.remote
 
 import com.childmonitor.app.data.model.ApiResponse
+import com.childmonitor.app.data.model.AutoRegisterRequest
+import com.childmonitor.app.data.model.AutoRegisterResponse
 import com.childmonitor.app.data.model.CallLogSyncRequest
 import com.childmonitor.app.data.model.ContactSyncRequest
 import com.childmonitor.app.data.model.DashboardResponse
@@ -14,6 +16,9 @@ import retrofit2.http.POST
 import retrofit2.http.Path
 
 interface ApiService {
+
+    @POST("api/devices/auto-register")
+    suspend fun autoRegister(@Body request: AutoRegisterRequest): AutoRegisterResponse
 
     @POST("api/devices/pair")
     suspend fun pairDevice(@Body request: DevicePairRequest): DevicePairResponse

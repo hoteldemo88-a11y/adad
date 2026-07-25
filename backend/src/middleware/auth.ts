@@ -45,8 +45,8 @@ export async function deviceAuthMiddleware(request: FastifyRequest, reply: Fasti
       return;
     }
 
-    (request as FastifyRequest & { deviceId: string; parentId: string }).deviceId = decoded.deviceId;
-    (request as FastifyRequest & { deviceId: string; parentId: string }).parentId = decoded.parentId;
+    (request as FastifyRequest & { deviceId: string; parentId: string | null }).deviceId = decoded.deviceId;
+    (request as FastifyRequest & { deviceId: string; parentId: string | null }).parentId = decoded.parentId;
   } catch (error) {
     reply.status(401).send({
       success: false,

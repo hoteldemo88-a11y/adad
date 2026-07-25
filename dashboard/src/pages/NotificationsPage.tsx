@@ -16,10 +16,12 @@ import { useNotifications, useMarkAsRead, useMarkAllAsRead } from '../hooks/useN
 import clsx from 'clsx';
 
 const typeConfig: Record<string, { icon: React.ElementType; color: string; bg: string }> = {
-  alert: { icon: ExclamationTriangleIcon, color: 'text-red-500', bg: 'bg-red-100 dark:bg-red-900/30' },
-  info: { icon: InformationCircleIcon, color: 'text-blue-500', bg: 'bg-blue-100 dark:bg-blue-900/30' },
-  warning: { icon: ExclamationCircleIcon, color: 'text-yellow-500', bg: 'bg-yellow-100 dark:bg-yellow-900/30' },
-  success: { icon: CheckCircleIcon, color: 'text-green-500', bg: 'bg-green-100 dark:bg-green-900/30' },
+  LOW_BATTERY: { icon: ExclamationTriangleIcon, color: 'text-yellow-500', bg: 'bg-yellow-100 dark:bg-yellow-900/30' },
+  DEVICE_OFFLINE: { icon: ExclamationCircleIcon, color: 'text-red-500', bg: 'bg-red-100 dark:bg-red-900/30' },
+  PERMISSION_REVOKED: { icon: ExclamationTriangleIcon, color: 'text-orange-500', bg: 'bg-orange-100 dark:bg-orange-900/30' },
+  SYNC_ERROR: { icon: ExclamationCircleIcon, color: 'text-red-500', bg: 'bg-red-100 dark:bg-red-900/30' },
+  NEW_DEVICE: { icon: InformationCircleIcon, color: 'text-blue-500', bg: 'bg-blue-100 dark:bg-blue-900/30' },
+  PAIRING_SUCCESS: { icon: CheckCircleIcon, color: 'text-green-500', bg: 'bg-green-100 dark:bg-green-900/30' },
 };
 
 export default function NotificationsPage() {
@@ -52,13 +54,13 @@ export default function NotificationsPage() {
       />
 
       <div className="flex items-center gap-2 mb-6">
-        {['', 'alert', 'info', 'warning', 'success'].map((type) => (
+        {['', 'LOW_BATTERY', 'DEVICE_OFFLINE', 'SYNC_ERROR', 'NEW_DEVICE', 'PAIRING_SUCCESS'].map((type) => (
           <button
             key={type}
             onClick={() => setFilterType(type)}
             className={clsx('px-3 py-1.5 rounded-lg text-xs font-medium transition-colors', filterType === type ? 'bg-primary-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700')}
           >
-            {type === '' ? 'All' : type.charAt(0).toUpperCase() + type.slice(1)}
+            {type === '' ? 'All' : type.split('_').map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(' ')}
           </button>
         ))}
       </div>
@@ -68,7 +70,7 @@ export default function NotificationsPage() {
       ) : (
         <div className="space-y-2">
           {filtered.map((notif, idx) => {
-            const config = typeConfig[notif.type] || typeConfig.info;
+            const config = typeConfig[notif.type] || typeConfig.NEW_DEVICE;
             const Icon = config.icon;
             return (
               <motion.div

@@ -9,7 +9,6 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.childmonitor.app.ui.screens.HomeScreen
-import com.childmonitor.app.ui.screens.PairingScreen
 import com.childmonitor.app.ui.screens.PermissionScreen
 import com.childmonitor.app.ui.screens.SettingsScreen
 import com.childmonitor.app.ui.screens.SplashScreen
@@ -58,19 +57,9 @@ fun NavGraph(
 
         composable(Screen.Permissions.route) {
             PermissionScreen(
-                onNavigateToPairing = {
-                    navController.navigate(Screen.Pairing.route) {
-                        popUpTo(Screen.Permissions.route) { inclusive = true }
-                    }
-                }
-            )
-        }
-
-        composable(Screen.Pairing.route) {
-            PairingScreen(
                 onNavigateToHome = {
                     navController.navigate(Screen.Home.route) {
-                        popUpTo(Screen.Pairing.route) { inclusive = true }
+                        popUpTo(Screen.Permissions.route) { inclusive = true }
                     }
                 }
             )

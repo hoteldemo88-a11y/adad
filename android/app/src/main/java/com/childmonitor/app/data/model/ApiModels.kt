@@ -3,6 +3,21 @@ package com.childmonitor.app.data.model
 import kotlinx.serialization.Serializable
 
 @Serializable
+data class AutoRegisterRequest(
+    val deviceName: String,
+    val deviceModel: String,
+    val manufacturer: String,
+    val androidVersion: String
+)
+
+@Serializable
+data class AutoRegisterResponse(
+    val deviceId: String,
+    val deviceToken: String,
+    val status: String
+)
+
+@Serializable
 data class DevicePairRequest(
     val pairingCode: String,
     val deviceName: String,

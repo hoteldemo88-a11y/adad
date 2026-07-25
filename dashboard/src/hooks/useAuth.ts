@@ -1,9 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { login as apiLogin, register as apiRegister, logout as apiLogout, forgotPassword as apiForgotPassword, getStoredToken } from '../lib/auth';
+import { login as apiLogin, register as apiRegister, logout as apiLogout, forgotPassword as apiForgotPassword, getStoredToken, getStoredUser } from '../lib/auth';
 import { queryKeys } from '../lib/query-keys';
-import api from '../lib/api';
 import { User } from '../types';
 
 export function useAuth() {
@@ -12,9 +11,10 @@ export function useAuth() {
 
   const { data: user, isLoading } = useQuery({
     queryKey: queryKeys.auth.user(),
-    queryFn: async () => {
-      const { data } = await api.get<{ user: User }>('/auth/me');
-      return data.user;
+    queryFn: () => {
+      const stored = getStoredUser();
+      if (!stored) return null;
+      return stored as unknown as User;
     },
     enabled: !!getStoredToken(),
     staleTime: 5 * 60 * 1000,
@@ -24,7 +24,7 @@ export function useAuth() {
     mutationFn: (credentials: { email: string; password: string }) =>
       apiLogin(credentials.email, credentials.password),
     onSuccess: (data) => {
-      queryClient.setQueryData(queryKeys.auth.user(), data.user);
+      queryClient.setQueryData(queryKeys.auth.user(), data.parent as unknown as User);
       toast.success('Welcome back!');
       navigate('/dashboard');
     },
@@ -37,7 +37,7 @@ export function useAuth() {
     mutationFn: (credentials: { name: string; email: string; password: string }) =>
       apiRegister(credentials.name, credentials.email, credentials.password),
     onSuccess: (data) => {
-      queryClient.setQueryData(queryKeys.auth.user(), data.user);
+      queryClient.setQueryData(queryKeys.auth.user(), data.parent as unknown as User);
       toast.success('Account created successfully!');
       navigate('/dashboard');
     },

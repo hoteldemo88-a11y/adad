@@ -1,34 +1,37 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { PhoneArrowUpRightIcon, PhoneArrowDownLeftIcon, PhoneXMarkIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
+import { ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 import PageHeader from '../components/PageHeader';
 import DataTable from '../components/DataTable';
 import { useCalls } from '../hooks/useCalls';
+import { useDevices } from '../hooks/useDevices';
 import { format } from 'date-fns';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
 
 const typeBadge: Record<string, { bg: string; text: string; label: string }> = {
-  incoming: { bg: 'bg-green-100 dark:bg-green-900/30', text: 'text-green-700 dark:text-green-400', label: 'Incoming' },
-  outgoing: { bg: 'bg-blue-100 dark:bg-blue-900/30', text: 'text-blue-700 dark:text-blue-400', label: 'Outgoing' },
-  missed: { bg: 'bg-red-100 dark:bg-red-900/30', text: 'text-red-700 dark:text-red-400', label: 'Missed' },
+  INCOMING: { bg: 'bg-green-100 dark:bg-green-900/30', text: 'text-green-700 dark:text-green-400', label: 'Incoming' },
+  OUTGOING: { bg: 'bg-blue-100 dark:bg-blue-900/30', text: 'text-blue-700 dark:text-blue-400', label: 'Outgoing' },
+  MISSED: { bg: 'bg-red-100 dark:bg-red-900/30', text: 'text-red-700 dark:text-red-400', label: 'Missed' },
 };
 
 export default function CallsPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
+  const [deviceId, setDeviceId] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [downloading, setDownloading] = useState(false);
 
-  const { data, isLoading } = useCalls({ page, search, type: typeFilter, startDate: startDate || undefined, endDate: endDate || undefined });
+  const { data: devices } = useDevices();
+  const { data, isLoading } = useCalls({ page, deviceId: deviceId || undefined, search, type: typeFilter, startDate: startDate || undefined, endDate: endDate || undefined });
   const calls = data?.data || [];
 
   const exportCSV = () => {
     setDownloading(true);
     const headers = ['Contact', 'Number', 'Type', 'Duration (s)', 'Date'];
-    const rows = calls.map((c) => [c.contactName, c.phoneNumber, c.type, c.duration, c.timestamp]);
+    const rows = calls.map((c) => [c.contactName || '', c.phoneNumber, c.type, c.duration, c.timestamp]);
     const csv = [headers.join(','), ...rows.map((r) => r.map((v) => `"${v}"`).join(','))].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
@@ -57,7 +60,7 @@ export default function CallsPage() {
           <div className="w-8 h-8 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center">
             <span className="text-primary-600 dark:text-primary-400 text-xs font-medium">{item.contactName?.charAt(0) || '?'}</span>
           </div>
-          <span className="font-medium">{item.contactName}</span>
+          <span className="font-medium">{item.contactName || 'Unknown'}</span>
         </div>
       ),
     },
@@ -67,7 +70,7 @@ export default function CallsPage() {
       header: 'Type',
       sortable: true,
       render: (item: any) => {
-        const badge = typeBadge[item.type] || typeBadge.incoming;
+        const badge = typeBadge[item.type] || typeBadge.INCOMING;
         return <span className={clsx('px-2 py-1 rounded-full text-xs font-medium', badge.bg, badge.text)}>{badge.label}</span>;
       },
     },
@@ -90,14 +93,24 @@ export default function CallsPage() {
 
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <select
+          value={deviceId}
+          onChange={(e) => { setDeviceId(e.target.value); setPage(1); }}
+          className="px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+        >
+          <option value="">All Devices</option>
+          {devices?.map((d) => (
+            <option key={d.id} value={d.id}>{d.name}</option>
+          ))}
+        </select>
+        <select
           value={typeFilter}
           onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }}
           className="px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
         >
           <option value="">All Types</option>
-          <option value="incoming">Incoming</option>
-          <option value="outgoing">Outgoing</option>
-          <option value="missed">Missed</option>
+          <option value="INCOMING">Incoming</option>
+          <option value="OUTGOING">Outgoing</option>
+          <option value="MISSED">Missed</option>
         </select>
         <input
           type="date"

@@ -2,101 +2,123 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  phone?: string;
-  avatar?: string;
-  role: 'parent' | 'child';
   createdAt: string;
-  updatedAt: string;
+  updatedAt?: string;
 }
 
 export interface Device {
   id: string;
   name: string;
   model: string;
-  os: string;
-  osVersion: string;
-  batteryLevel: number;
+  manufacturer: string;
+  androidVersion: string;
+  pairingCode?: string | null;
+  parentId?: string | null;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
   isOnline: boolean;
-  lastSync: string;
-  storageUsed: number;
+  isMonitoringActive: boolean;
+  batteryLevel: number;
   storageTotal: number;
-  networkType: string;
-  pairedAt: string;
-  isPaused: boolean;
+  storageUsed: number;
+  lastSyncAt: string | null;
+  createdAt: string;
+  updatedAt?: string;
+  _count?: {
+    contacts: number;
+    callLogs: number;
+    smsMessages: number;
+  };
 }
 
 export interface Contact {
   id: string;
   deviceId: string;
   name: string;
-  phone: string;
-  email?: string;
+  phoneNumber: string | null;
+  email?: string | null;
   isFavorite: boolean;
+  syncHash: string;
   createdAt: string;
+  device?: { id: string; name: string };
 }
 
 export interface CallLog {
   id: string;
   deviceId: string;
-  contactId?: string;
-  contactName: string;
+  contactName: string | null;
   phoneNumber: string;
-  type: 'incoming' | 'outgoing' | 'missed';
+  type: 'INCOMING' | 'OUTGOING' | 'MISSED';
   duration: number;
   timestamp: string;
+  syncHash: string;
+  device?: { id: string; name: string };
 }
 
 export interface SmsMessage {
   id: string;
   deviceId: string;
-  contactId?: string;
-  sender: string;
-  recipient: string;
+  senderNumber: string;
+  recipientNumber: string;
   body: string;
-  type: 'received' | 'sent';
+  type: 'INCOMING' | 'OUTGOING';
   timestamp: string;
-  isRead: boolean;
+  syncHash: string;
+  device?: { id: string; name: string };
 }
 
 export interface Notification {
   id: string;
-  userId: string;
+  parentId: string;
+  deviceId?: string | null;
+  type: string;
   title: string;
   message: string;
-  type: 'alert' | 'info' | 'warning' | 'success';
   isRead: boolean;
   createdAt: string;
+  device?: { id: string; name: string };
+}
+
+export interface DeviceStats {
+  id: string;
+  name: string;
+  model: string;
+  isOnline: boolean;
+  isMonitoringActive: boolean;
+  batteryLevel: number;
+  storageTotal: number;
+  storageUsed: number;
+  lastSyncAt: string | null;
+  storagePercentage: number;
+  todayActivity: {
+    incomingCalls: number;
+    outgoingCalls: number;
+    missedCalls: number;
+    totalCalls: number;
+    incomingSms: number;
+    outgoingSms: number;
+    totalSms: number;
+  };
+}
+
+export interface DashboardSummary {
+  totalDevices: number;
+  onlineDevices: number;
+  offlineDevices: number;
+  lowBatteryDevices: number;
+  totalContacts: number;
+  todayCalls: number;
+  todaySms: number;
+  unreadNotifications: number;
 }
 
 export interface DashboardData {
-  device: Device | null;
-  stats: {
-    totalContacts: number;
-    callsToday: number;
-    smsToday: number;
-    avgScreenTime: number;
-  };
-  callDistribution: {
-    incoming: number;
-    outgoing: number;
-    missed: number;
-  };
-  screenTimeByHour: number[];
-  appUsage: { name: string; hours: number }[];
-  recentActivity: {
-    id: string;
-    type: string;
-    message: string;
-    timestamp: string;
-  }[];
-  permissions: {
-    name: string;
-    granted: boolean;
-  }[];
+  devices: DeviceStats[];
+  summary: DashboardSummary;
+  lastUpdated: string;
 }
 
 export interface AuthResponse {
-  user: User;
+  parent: { id: string; name: string; email: string };
   accessToken: string;
   refreshToken: string;
 }
@@ -107,10 +129,4 @@ export interface PaginatedResponse<T> {
   page: number;
   limit: number;
   totalPages: number;
-}
-
-export interface SyncState {
-  lastSync: string;
-  isSyncing: boolean;
-  error: string | null;
 }

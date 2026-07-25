@@ -68,8 +68,9 @@ model ChildDevice {
   model               String
   manufacturer        String
   androidVersion      String
-  pairingCode         String       @unique
-  parentId            String
+  pairingCode         String?
+  parentId            String?
+  status              String       @default("PENDING")
   isOnline            Boolean      @default(false)
   lastSyncAt          DateTime?
   batteryLevel        Int          @default(100)
@@ -79,7 +80,7 @@ model ChildDevice {
   createdAt           DateTime     @default(now())
   updatedAt           DateTime     @updatedAt
 
-  parent        Parent        @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  parent        Parent?       @relation(fields: [parentId], references: [id], onDelete: Cascade)
   contacts      Contact[]
   callLogs      CallLog[]
   smsMessages   SmsMessage[]
@@ -89,6 +90,7 @@ model ChildDevice {
   @@index([pairingCode])
   @@index([parentId])
   @@index([isOnline])
+  @@index([status])
 }
 
 model Contact {

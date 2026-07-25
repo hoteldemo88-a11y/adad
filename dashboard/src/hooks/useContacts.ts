@@ -8,15 +8,16 @@ interface ContactParams {
   limit?: number;
   search?: string;
   favoritesOnly?: boolean;
+  deviceId?: string;
 }
 
 export function useContacts(params: ContactParams = {}) {
-  const { page = 1, limit = 20, search = '', favoritesOnly = false } = params;
+  const { page = 1, limit = 20, search = '', favoritesOnly = false, deviceId } = params;
   return useQuery({
     queryKey: queryKeys.contacts.list(params),
     queryFn: async () => {
       const { data } = await api.get<PaginatedResponse<Contact>>('/contacts', {
-        params: { page, limit, search, favoritesOnly: favoritesOnly || undefined },
+        params: { page, limit, search, favoritesOnly: favoritesOnly || undefined, deviceId },
       });
       return data;
     },
