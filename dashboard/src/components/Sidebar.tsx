@@ -4,9 +4,6 @@ import clsx from 'clsx';
 import {
   HomeIcon,
   DevicePhoneMobileIcon,
-  UserGroupIcon,
-  PhoneIcon,
-  ChatBubbleLeftEllipsisIcon,
   BellIcon,
   Cog6ToothIcon,
   ChevronLeftIcon,
@@ -17,9 +14,6 @@ import { useState } from 'react';
 const navItems = [
   { path: '/dashboard', label: 'Home', icon: HomeIcon },
   { path: '/devices', label: 'Devices', icon: DevicePhoneMobileIcon },
-  { path: '/contacts', label: 'Contacts', icon: UserGroupIcon },
-  { path: '/calls', label: 'Calls', icon: PhoneIcon },
-  { path: '/sms', label: 'SMS', icon: ChatBubbleLeftEllipsisIcon },
   { path: '/notifications', label: 'Notifications', icon: BellIcon },
   { path: '/settings', label: 'Settings', icon: Cog6ToothIcon },
 ];

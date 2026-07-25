@@ -9,11 +9,8 @@ import RegisterPage from './pages/RegisterPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import DashboardPage from './pages/DashboardPage';
 import DevicesPage from './pages/DevicesPage';
-import ContactsPage from './pages/ContactsPage';
-import CallsPage from './pages/CallsPage';
-import SmsPage from './pages/SmsPage';
-import NotificationsPage from './pages/NotificationsPage';
 import DeviceDetailPage from './pages/DeviceDetailPage';
+import NotificationsPage from './pages/NotificationsPage';
 import SettingsPage from './pages/SettingsPage';
 import { getStoredToken } from './lib/auth';
 
@@ -63,9 +60,6 @@ export default function App() {
                 <Route path="dashboard" element={<DashboardPage />} />
                 <Route path="devices" element={<DevicesPage />} />
                 <Route path="devices/:id" element={<DeviceDetailPage />} />
-                <Route path="contacts" element={<ContactsPage />} />
-                <Route path="calls" element={<CallsPage />} />
-                <Route path="sms" element={<SmsPage />} />
                 <Route path="notifications" element={<NotificationsPage />} />
                 <Route path="settings" element={<SettingsPage />} />
               </Route>
