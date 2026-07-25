@@ -18,3 +18,17 @@ services:
         value: https://parental-control-dashboard.onrender.com
     healthCheckPath: /health
     autoDeploy: true
+
+  - type: static_site
+    name: parental-control-dashboard
+    plan: free
+    buildCommand: cd dashboard && npm install && npm run build
+    staticPublishPath: dashboard/dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://parental-control-backend-fg7t.onrender.com
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    autoDeploy: true
